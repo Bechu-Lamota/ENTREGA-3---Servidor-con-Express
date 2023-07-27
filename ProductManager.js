@@ -1,120 +1,100 @@
-//fileSystem
-const fs = require('fs');
-const { resolve } = require('path');
+const fs = require('fs')
 
-class ProductManager {
-  constructor(path) {
-    this.products = []
-    this.path = path //la ruta a trabajar
-  }
+class ProductManager  {
+    constructor (path) {
+        this.products = []
+        this.path = path
+    }
 
-  //  AGREGO readFile al getproducts
-  getProducts() {
-   return fs.promises.readFile(this.path, 'utf-8')
-    .then((productosArchivo) => {
-      const productosObjeto = JSON.parse(productosArchivo) //esto me los convierte en objetos.
-      return productosObjeto
-      })
-    .catch((e) => {
-      console.log({ e })
-      return e
-     })
-  }
-
-  addProduct(data) {
-      // CONDICIÓN DE TODOS LOS CAMPOS COMPLETOS
-      return new Promise((resolve, reject) => {
+    addProduct (data) {
         if (!data.title || !data.description || !data.price || !data.thumbnail || !data.code || !data.stock) {
-            return reject('Error: Faltan completar campos')
-      }
-      const existProduct = this.products.findIndex((product) => product.code === data.code)
-      if (existProduct !== -1) {
-        console.log("El codigo de producto esta en uso") 
-        return reject('Error: El codigo esta en uso.')
-// CONDICION DE VER SI EL CODIGO NO ESTA EN USO.
-    }
-
-    const productosObjeto = {
-        id: products.length + 1,
-        title: data.title,
-        description: data.description,
-        price: data.price,
-        thumbnail: data.thumbnail,
-        code: data.code,
-        stock: data.stock
-    }
-
-    this.products.push(productosObjeto)
-
-    return this.getProducts()
-    .then(products => {
-       
-        return fs.promises.writeFile(this.path, JSON.stringify(products, null, 2))
-      })
-      .catch((e) => {
-          console.log('ERROR: El usuario no ha sido guardado')
-          return e
-      })
-    }
-
-  getProductById(id) {
-      return this.getProducts()
-      .then(products => {
-          const existProduct = products.find((product) => product.id === id);
-          if (!existProduct) {
-            const error = 'Notfound'
-            console.log("Producto no encontrado");
-            return error
+            return "Error: Faltan completar campos"
           }
-          return existProduct
-      })
-  }
 
-  //  agrego update y delete
-updateProduct(id, newData) {
-  return this.getProducts()
-  .then(products => {
-      const index = products.find((product) => product.id === id);
-      if (index) {
-        console.log("Producto no encontrado");
-        return "Error: Producto no encontrado.";
+          const existProduct = this.products.find((product) => product.code === data.code)
+          if (existProduct) {
+            console.log("El codigo de producto esta en uso") 
+            return "Error: El codigo esta en uso."
+          }    
+
+          const product = {
+            id: this.products.length + 1,
+            title: data.title,
+            description: data.description,
+            price: data.price,
+            thumbnail: data.thumbnail,
+            code: data.code,
+            stock: data.stock
+        }
+        this.products.push(product);
+
+        const productoString = JSON.stringify(this.products, null, 2)
+        fs.promises.writeFile(this.path, productoString, (err) => {
+            if (err) {
+                console.log("No se pudo guardar los prodroductos")
+            } else {
+                console.log("Satisfactorio")
+            }
+        });
+
+        return product;
+    }
+
+    getProduct () {
+        return fs.promises.readFile(this.path, 'utf-8')
+        .then((productString) => {
+            const products = JSON.parse(productString)
+            console.log(products)
+
+            return products
+        })
+        .catch (error => {
+            console.log('Error al leer el archivo', error )
+            return []
+        })
+
+    }
+
+      getProductById (id) {
+        return this.getProduct()
+          .then((products) => {
+            const product = products.find(product => product.id === id)
+
+            return product
+          })
+          .catch(e => {
+            console.log('Error al obtener el Producto')
+            return e
+          })
       }
-  
-      products[index] = { ...products[index], ...newData };
-  
-      return fs.promises.writeFile(this.path, JSON.stringify(products, null, 2))
-  })
+
+    updateProduct (id, actualizacion) {
+        const index = this.products.findIndex((product) => product.id === id);
+        if (index === -1) {
+            console.log("Producto no actualizado");
+            return "Error: Producto no actualizado"
+        }
+        this.products[index] = {...this.products[index], ...actualizacion};
+        const productoActualizado = JSON.stringify(this.products, null, 2);
+        fs.writeFile(this.path, productoActualizado, 'utf-8', (err) => {
+            if (err) {
+                console.log("No se pudo actualizar el producto");
+            } else {
+                console.log("Producto actualizado correctamente");
+            }
+        });
+    }
+
+    deleteProduct (id) {
+        const index = this.products.find((product) => product.id === id);
+        if (!index) {
+            return console.log("Producto no encontrado")
+        }
+        const eliminarProductos = this.products.splice(index, 1)[0];
+
+        return eliminarProductos;
+    }
+
 }
 
-deleteProduct(id) {
-  return this.getProducts()
-    .then(products => {
-      const index = products.findIndex((product) => product.id === id)
-      if (index === -1) {
-        console.log("Error: Producto no encontrado.")
-        return
-      }
-
-      const deletedProduct = products.splice(index, 1)[0]
-
-      return fs.promises.writeFile(this.path, JSON.stringify(products, null, 2))
-    })
-}
-}
-
-//     PROBAMOS
-const productManager = new ProductManager('./productos.json');
-
-const producto1 = {
-    title: "producto prueba",
-    description: "Este es un producto prueba",
-    price: 200,
-    thumbnail: "Sin imagen",
-    code: "abc123",
-    stock: 25
-  };
-
-  productManager.addProduct(producto1)
-
-  console.log(producto1);
-  */
+module.exports = ProductManager
