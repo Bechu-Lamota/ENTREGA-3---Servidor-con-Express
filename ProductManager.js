@@ -52,7 +52,6 @@ class ProductManager  {
             console.log('Error al leer el archivo', error )
             return []
         })
-
     }
 
       getProductById (id) {
